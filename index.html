@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PizzaGoogle — Old Way vs. PageRank Search Simulator</title>
+  <!-- Tailwind CSS for responsive layout and utility styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter for crisp UI & Fredoka for playful pizza mascot headers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FFFDF7;
+      color: #1F2937;
+    }
+
+    .font-fun {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Playful animations for the pizza mascots and floating badges */
+    @keyframes spinSlow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes floatBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+
+    @keyframes tossPizza {
+      0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(1); }
+      50% { transform: translateY(-16px) rotate(180deg) scaleX(0.88); }
+    }
+
+    .animate-spin-slow {
+      animation: spinSlow 14s linear infinite;
+    }
+
+    .animate-bob {
+      animation: floatBob 3s ease-in-out infinite;
+    }
+
+    .animate-wiggle {
+      animation: wiggle 2.4s ease-in-out infinite;
+    }
+
+    .animate-toss {
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: tossPizza 2.2s ease-in-out infinite;
+    }
+
+    /* Highlighted search terms in cheesy mozzarella-gold */
+    mark.cheese-mark {
+      background-color: #FEF08A;
+      color: #854D0E;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 5px;
+      box-shadow: inset 0 -2px 0 #FACC15;
+    }
+
+    /* Custom range slider styling */
+    input[type="range"] {
+      accent-color: #EA4335;
+    }
+
+    /* Smooth card hover lift */
+    .result-card {
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .result-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
+
+  <!-- Top Navigation / Dataset Pill Bar -->
+  <header class="w-full bg-white/90 backdrop-blur border-b border-amber-200/70 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white text-lg shadow-sm">🍕</span>
+        <span class="font-fun font-bold text-lg tracking-tight text-gray-800">
+          Pizza<span class="text-red-500">G</span><span class="text-amber-500">o</span><span class="text-blue-500">o</span><span class="text-green-600">g</span><span class="text-red-500">l</span><span class="text-amber-500">e</span>
+        </span>
+        <span class="hidden sm:inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+          Pune Pizza Index • 6 Sites
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs sm:text-sm">
+        <a href="#network-lab" class="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold transition">
+          🕸️ Link Graph &amp; Math Lab
+        </a>
+        <a href="#dataset-table" class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold transition">
+          📋 CSV Dataset
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-14 space-y-8">
+
+    <!-- HERO SECTION: Playful PizzaGoogle Logo + Funny Animals & Chef Mascot Stage + Search Bar -->
+    <section class="bg-white rounded-3xl border border-amber-200/80 shadow-sm p-5 sm:p-8 relative overflow-hidden">
+      <!-- Subtle decorative background pizza dots -->
+      <div class="pointer-events-none absolute -top-12 -right-12 w-48 h-48 rounded-full bg-amber-100/50 blur-2xl"></div>
+      <div class="pointer-events-none absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-red-100/40 blur-2xl"></div>
+
+      <!-- Funny Mascot Stage: Golden Retriever with Pizza on Head + Italian Pizza Chef Tossing Dough -->
+      <div class="flex flex-col lg:flex-row items-center justify-between gap-6 mb-6">
+        
+        <!-- Left Mascot: Sunglasses Golden Retriever Balancing Pepperoni Pizza -->
+        <div class="flex items-center gap-3 bg-amber-50/90 border border-amber-200 rounded-2xl p-3 sm:p-4 max-w-md w-full shadow-xs">
+          <div class="w-20 h-20 sm:w-24 sm:h-24 shrink-0 animate-bob">
+            <!-- Custom SVG: Cool Golden Retriever balancing a Pepperoni Pizza on its head -->
+            <svg viewBox="0 0 120 120" class="w-full h-full" aria-label="Golden Retriever balancing pizza on head">
+              <!-- Pepperoni Pizza balanced on head -->
+              <ellipse cx="60" cy="24" rx="34" ry="8" fill="#F59E0B" stroke="#B45309" stroke-width="2.5"/>
+              <ellipse cx="60" cy="22" rx="28" ry="5.5" fill="#FDE047"/>
+              <circle cx="48" cy="22" r="2.8" fill="#DC2626"/>
+              <circle cx="62" cy="21" r="3" fill="#DC2626"/>
+              <circle cx="74" cy="22.5" r="2.5" fill="#DC2626"/>
+              <!-- Dripping melted cheese -->
+              <path d="M36 25 Q38 33 40 26 M78 25 Q80 34 83 25" stroke="#FACC15" stroke-width="3" stroke-linecap="round" fill="none"/>
+              <!-- Floppy Dog Ears -->
+              <path d="M30 48 Q16 58 22 84 Q30 88 36 72 Z" fill="#D97706" stroke="#92400E" stroke-width="2"/>
+              <path d="M90 48 Q104 58 98 84 Q90 88 84 72 Z" fill="#D97706" stroke="#92400E" stroke-width="2"/>
+              <!-- Dog Head -->
+              <circle cx="60" cy="64" r="31" fill="#FBBF24" stroke="#B45309" stroke-width="2.5"/>
+              <!-- Cool Black Sunglasses -->
+              <rect x="35" y="52" width="21" height="13" rx="4" fill="#111827"/>
+              <rect x="64" y="52" width="21" height="13" rx="4" fill="#111827"/>
+              <line x1="56" y1="56" x2="64" y2="56" stroke="#111827" stroke-width="3"/>
+              <line x1="39" y1="55" x2="45" y2="61" stroke="#60A5FA" stroke-width="2" stroke-linecap="round"/>
+              <line x1="68" y1="55" x2="74" y2="61" stroke="#60A5FA" stroke-width="2" stroke-linecap="round"/>
+              <!-- Muzzle, Nose & Happy Tongue -->
+              <ellipse cx="60" cy="76" rx="14" ry="10" fill="#FEF3C7"/>
+              <ellipse cx="60" cy="71" rx="6" ry="4.5" fill="#1F2937"/>
+              <path d="M51 80 Q60 88 69 80" stroke="#78350F" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              <path d="M56 83 Q60 95 64 83 Z" fill="#F43F5E"/>
+            </svg>
+          </div>
+          <div class="text-xs sm:text-sm">
+            <div class="font-fun font-bold text-amber-900 text-sm sm:text-base flex items-center gap-1.5">
+              <span>Professor Golden</span>
+              <span class="text-[11px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">Chief Pizza Taster</span>
+            </div>
+            <p id="dog-speech" class="text-gray-700 mt-1 leading-snug">
+              "Woof! In 1996, that sneaky raccoon yelled <b>pizza</b> 10 times to steal #1! PageRank exposes spam!"
+            </p>
+          </div>
+        </div>
+
+        <!-- Center Brand Title -->
+        <div class="text-center">
+          <h1 class="font-fun text-4xl sm:text-6xl font-bold tracking-tight select-none flex items-center justify-center flex-wrap">
+            <span class="text-[#4285F4]">P</span>
+            <span class="text-[#EA4335]">i</span>
+            <span class="text-[#FBBC05]">z</span>
+            <span class="text-[#4285F4]">z</span>
+            <span class="text-[#34A853]">a</span>
+            <span class="text-[#EA4335]">G</span>
+            <span class="inline-flex items-center justify-center mx-0.5 w-9 h-9 sm:w-12 sm:h-12 animate-spin-slow" title="Spinning Pepperoni O">
+              <svg viewBox="0 0 64 64" class="w-full h-full">
+                <circle cx="32" cy="32" r="29" fill="#F59E0B" stroke="#B45309" stroke-width="4"/>
+                <circle cx="32" cy="32" r="22" fill="#FDE047"/>
+                <circle cx="23" cy="22" r="4" fill="#DC2626"/>
+                <circle cx="41" cy="24" r="4" fill="#DC2626"/>
+                <circle cx="25" cy="40" r="4" fill="#DC2626"/>
+                <circle cx="40" cy="41" r="3.5" fill="#DC2626"/>
+                <circle cx="32" cy="31" r="3" fill="#16A34A"/>
+              </svg>
+            </span>
+            <span class="text-[#FBBC05]">o</span>
+            <span class="text-[#4285F4]">g</span>
+            <span class="text-[#34A853]">l</span>
+            <span class="text-[#EA4335]">e</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-gray-500 font-medium mt-1">
+            Comparing <span class="text-amber-700 font-semibold">1996 Keyword Stuffing</span> vs. <span class="text-blue-700 font-semibold">1998 Google PageRank</span>
+          </p>
+        </div>
+
+        <!-- Right Mascot: Italian Chef Tossing Spinning Pizza Pie -->
+        <div class="flex items-center gap-3 bg-red-50/90 border border-red-200 rounded-2xl p-3 sm:p-4 max-w-md w-full shadow-xs">
+          <div class="text-xs sm:text-sm text-right flex-1">
+            <div class="font-fun font-bold text-red-900 text-sm sm:text-base flex items-center justify-end gap-1.5">
+              <span class="text-[11px] bg-red-200 text-red-900 px-2 py-0.5 rounded-full">Algorithm Chef</span>
+              <span>Chef Mario</span>
+            </div>
+            <p id="chef-speech" class="text-gray-700 mt-1 leading-snug">
+              "Mamma mia! <b>best-pizza-pune.com</b> gets 4 real link-votes from Pune foodies—that's true authority!"
+            </p>
+          </div>
+          <div class="w-20 h-20 sm:w-24 sm:h-24 shrink-0">
+            <!-- Custom SVG: Italian Pizza Chef tossing spinning pizza -->
+            <svg viewBox="0 0 120 120" class="w-full h-full" aria-label="Italian Chef tossing spinning pizza">
+              <!-- Tossed Spinning Pizza in the Air -->
+              <g class="animate-toss">
+                <ellipse cx="60" cy="18" rx="28" ry="6.5" fill="#F59E0B" stroke="#B45309" stroke-width="2"/>
+                <ellipse cx="60" cy="17" rx="22" ry="4.5" fill="#FEF08A"/>
+                <circle cx="52" cy="17" r="2.2" fill="#DC2626"/>
+                <circle cx="66" cy="17" r="2.2" fill="#DC2626"/>
+              </g>
+              <!-- Chef Puffy Hat -->
+              <path d="M40 50 C32 42 38 30 48 33 C52 25 68 25 72 33 C82 30 88 42 80 50 Z" fill="#FFFFFF" stroke="#9CA3AF" stroke-width="2"/>
+              <rect x="43" y="47" width="34" height="8" rx="2" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.5"/>
+              <!-- Chef Face -->
+              <circle cx="60" cy="69" r="18" fill="#FDBA74" stroke="#C2410C" stroke-width="2"/>
+              <!-- Eyes -->
+              <circle cx="54" cy="65" r="2.3" fill="#1F2937"/>
+              <circle cx="66" cy="65" r="2.3" fill="#1F2937"/>
+              <!-- Curled Italian Mustache -->
+              <path d="M44 74 Q52 69 60 74 Q68 69 76 74 Q71 79 60 76 Q49 79 44 74 Z" fill="#374151"/>
+              <!-- Red Neckerchief & Coat -->
+              <path d="M36 108 C36 92 84 92 84 108 Z" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="2"/>
+              <path d="M50 88 L60 98 L70 88 Z" fill="#EF4444"/>
+              <!-- Raised Tossing Hand -->
+              <circle cx="32" cy="62" r="6" fill="#FDBA74" stroke="#C2410C" stroke-width="1.8"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google-Style Search Bar -->
+      <div class="max-w-2xl mx-auto">
+        <form id="search-form" class="relative flex items-center">
+          <span class="absolute left-4 text-gray-400 text-lg pointer-events-none">🔍</span>
+          <input
+            id="search-input"
+            type="text"
+            value="pizza"
+            placeholder="Search Pune food sites (try: pizza, pune, vada pav, chai, dough, or *)"
+            autocomplete="off"
+            class="w-full pl-11 pr-28 py-3.5 sm:py-4 rounded-full bg-white border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-base sm:text-lg shadow-sm transition"
+          />
+          <button
+            type="button"
+            id="clear-btn"
+            title="Clear search"
+            class="absolute right-24 text-gray-400 hover:text-gray-600 px-2 py-1 text-lg font-bold"
+          >
+            ×
+          </button>
+          <button
+            type="submit"
+            class="absolute right-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold text-sm sm:text-base shadow-sm transition cursor-pointer"
+          >
+            Search
+          </button>
+        </form>
+
+        <!-- Quick Suggestion Chips -->
+        <div class="mt-3.5 flex flex-wrap items-center justify-center gap-2">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1">Try queries:</span>
+          <button type="button" data-query="pizza" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition cursor-pointer">
+            🍕 pizza (Spam vs Rank!)
+          </button>
+          <button type="button" data-query="pune" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer">
+            🏙️ pune
+          </button>
+          <button type="button" data-query="food" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer">
+            🍽️ food
+          </button>
+          <button type="button" data-query="vada pav" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer">
+            🥔 vada pav
+          </button>
+          <button type="button" data-query="chai" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer">
+            ☕ chai
+          </button>
+          <button type="button" data-query="dough" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer">
+            Rolling dough
+          </button>
+          <button type="button" data-query="*" class="query-chip px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition cursor-pointer">
+            🌐 * (All 6 Sites)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dynamic Insight Banner (Explains what happened in the current search) -->
+    <div id="insight-banner" class="rounded-2xl bg-gradient-to-r from-amber-50 via-yellow-50 to-blue-50 border border-amber-200 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+      <div class="flex items-start sm:items-center gap-3">
+        <span id="insight-icon" class="text-2xl sm:text-3xl">🚨</span>
+        <div>
+          <h2 id="insight-title" class="font-bold text-gray-900 text-sm sm:text-base">
+            Keyword Stuffing Alert on "pizza"!
+          </h2>
+          <p id="insight-desc" class="text-xs sm:text-sm text-gray-700">
+            In the <b>Old Way</b>, <code>pizza-pizza-pizza.com</code> cheats its way to #1 by repeating "pizza" 10 times with 0 incoming links. In the <b>PageRank Way</b>, <code>best-pizza-pune.com</code> wins #1 because 4 trusted sites link to it!
+          </p>
+        </div>
+      </div>
+      <span id="match-count-badge" class="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-700 shadow-2xs">
+        6 of 6 sites matched
+      </span>
+    </div>
+
+    <!-- SIDE-BY-SIDE COMPARISON ARENA: Old Way vs. PageRank Way -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+      <!-- LEFT COLUMN: THE OLD WAY (1996 Keyword Stuffing Era) -->
+      <div class="bg-amber-50/50 rounded-3xl border-2 border-amber-300/80 p-4 sm:p-6 shadow-xs">
+        <div class="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-amber-200">
+          <div>
+            <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-200/80 text-amber-900 mb-1">
+              <span>🦕 1996 Search Era</span>
+            </div>
+            <h2 class="font-fun text-xl sm:text-2xl font-bold text-gray-900">
+              The Old Way (Keyword Count)
+            </h2>
+            <p class="text-xs sm:text-sm text-gray-600">
+              Ranks purely by how many times your search word appears in page text. Easy to spam!
+            </p>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="block text-[11px] font-semibold text-amber-800 uppercase">Sorting Rule</span>
+            <span class="inline-block text-xs font-mono bg-white px-2.5 py-1 rounded-lg border border-amber-200 text-amber-900 font-bold">
+              COUNT(keyword) ↓
+            </span>
+          </div>
+        </div>
+
+        <!-- Old Way Results Container -->
+        <div id="old-way-results" class="space-y-3.5"></div>
+      </div>
+
+      <!-- RIGHT COLUMN: THE PAGERANK WAY (Google Link Authority Era) -->
+      <div class="bg-blue-50/40 rounded-3xl border-2 border-blue-300/80 p-4 sm:p-6 shadow-xs">
+        <div class="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-blue-200">
+          <div>
+            <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 mb-1">
+              <span>👑 1998 Google Breakthrough</span>
+            </div>
+            <h2 class="font-fun text-xl sm:text-2xl font-bold text-gray-900">
+              The PageRank Way (Link Votes)
+            </h2>
+            <p class="text-xs sm:text-sm text-gray-600">
+              Links act as weighted votes. A link from a popular page boosts your rank!
+            </p>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="block text-[11px] font-semibold text-blue-800 uppercase">Sorting Rule</span>
+            <span class="inline-block text-xs font-mono bg-white px-2.5 py-1 rounded-lg border border-blue-200 text-blue-900 font-bold">
+              PageRank PR(i) ↓
+            </span>
+          </div>
+        </div>
+
+        <!-- PageRank Way Results Container -->
+        <div id="pagerank-way-results" class="space-y-3.5"></div>
+      </div>
+
+    </section>
+
+    <!-- INTERACTIVE LINK NETWORK GRAPH & PAGERANK MATH SIMULATOR -->
+    <section id="network-lab" class="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 sm:p-8">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-gray-100">
+        <div>
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-green-100 text-green-800 mb-1">
+            🕸️ Interactive Graph &amp; Formula Lab
+          </span>
+          <h2 class="font-fun text-2xl sm:text-3xl font-bold text-gray-900">
+            Why Site #2 (Royal Chef Cat) Wins PageRank
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600 mt-0.5">
+            Node sizes scale live with PageRank score. Click any character node to inspect its incoming &amp; outgoing link votes!
+          </p>
+        </div>
+
+        <!-- Formula Pill -->
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-mono text-gray-800">
+          PR(A) = <span class="text-purple-700 font-bold">(1 - d)/N</span> + <span class="text-blue-700 font-bold">d · Σ [PR(Tᵢ) / L(Tᵢ)]</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-center">
+        <!-- Left 7 Cols: Interactive SVG Directed Graph -->
+        <div class="lg:col-span-7 bg-gradient-to-b from-slate-50 to-amber-50/30 rounded-2xl border border-gray-200 p-3 sm:p-4 relative">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600 mb-2 px-1">
+            <span class="font-semibold">📍 Hub &amp; Spoke Link Graph (N = 6)</span>
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Incoming Vote</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Outgoing Link</span>
+            </div>
+          </div>
+
+          <div class="w-full overflow-hidden">
+            <svg id="network-svg" viewBox="0 0 640 420" class="w-full h-auto select-none" aria-label="Directed Graph of 6 Pune Pizza Websites">
+              <defs>
+                <!-- Standard Arrowhead -->
+                <marker id="arrow-default" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#94A3B8" />
+                </marker>
+                <!-- Incoming Vote Highlight Arrowhead (Green) -->
+                <marker id="arrow-in" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
+                </marker>
+                <!-- Outgoing Vote Highlight Arrowhead (Amber/Orange) -->
+                <marker id="arrow-out" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
+                </marker>
+              </defs>
+              <!-- Edges and Nodes are dynamically rendered by JS -->
+              <g id="graph-edges"></g>
+              <g id="graph-nodes"></g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Damping Factor Slider, Iteration Stepper & Selected Node Breakdown -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Controls Box -->
+          <div class="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-4">
+            <div>
+              <div class="flex items-center justify-between text-sm font-bold text-gray-800 mb-1">
+                <label for="damping-slider">🎲 Damping Factor (d)</label>
+                <span id="damping-value" class="font-mono text-red-600 bg-red-50 px-2.5 py-0.5 rounded-lg border border-red-200">0.85</span>
+              </div>
+              <input id="damping-slider" type="range" min="0.10" max="0.99" step="0.01" value="0.85" class="w-full cursor-pointer" />
+              <div class="flex justify-between text-[11px] text-gray-500 mt-1">
+                <span>0.10 (Mostly Random Teleport)</span>
+                <span>0.85 (Google Default)</span>
+                <span>0.99 (Pure Links)</span>
+              </div>
+            </div>
+
+            <!-- Iteration Stepper -->
+            <div class="pt-3 border-t border-gray-200">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-bold text-gray-800">🔄 Power Iteration Step</span>
+                <span id="iter-badge" class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                  Converged (Iter 25)
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" id="iter-reset-btn" class="px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 transition cursor-pointer">
+                  Iter 0 (Equal)
+                </button>
+                <button type="button" id="iter-step-btn" class="px-3 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-2xs transition cursor-pointer">
+                  Step +1 ⏭️
+                </button>
+                <button type="button" id="iter-converge-btn" class="px-3 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs transition cursor-pointer">
+                  Converge ⚡
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected Node Math Inspector Card -->
+          <div id="node-inspector" class="bg-amber-50/70 rounded-2xl border border-amber-200 p-4">
+            <!-- Populated dynamically when user clicks/selects a node (defaults to Site #2) -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATASET TABLE SECTION (Exact 6-row CSV + Live Metrics) -->
+    <section id="dataset-table" class="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 sm:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        <div>
+          <h2 class="font-fun text-xl sm:text-2xl font-bold text-gray-900">
+            📋 Mini-Google Index Dataset (<code>page, url, text, links_to</code>)
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600">
+            The exact 6 Pune food websites indexed in our search engine, showing incoming link votes and live PageRank scores.
+          </p>
+        </div>
+        <span class="text-xs font-mono bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full self-start sm:self-auto">
+          6 Indexed Pages • 9 Directed Links
+        </span>
+      </div>
+
+      <div class="overflow-x-auto rounded-2xl border border-gray-200">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-700 font-bold">
+              <th class="py-3 px-3 sm:px-4">Page</th>
+              <th class="py-3 px-3 sm:px-4">Mascot</th>
+              <th class="py-3 px-3 sm:px-4">URL</th>
+              <th class="py-3 px-3 sm:px-4">Indexed Text</th>
+              <th class="py-3 px-3 sm:px-4">links_to</th>
+              <th class="py-3 px-3 sm:px-4">Linked By (Votes)</th>
+              <th class="py-3 px-3 sm:px-4 text-right">PageRank</th>
+            </tr>
+          </thead>
+          <tbody id="dataset-tbody" class="divide-y divide-gray-100">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 py-5 px-4 text-center text-xs text-gray-500">
+    Built with 🍕 &amp; Linear Algebra • Demonstrating why Google's <b>PageRank</b> defeated 1996 keyword-stuffing spam.
+  </footer>
+
+  <!-- APPLICATION LOGIC & SVG CHARACTER GENERATOR -->
+  <script>
+    /**
+     * 1. EXACT 6-SITE DATASET WITH CHARACTER PERSONAS
+     * Matches user specification:
+     * 1,pune-food-guide.com,Where to eat in Pune - vada pav and biryani and pizza,2
+     * 2,best-pizza-pune.com,Fresh wood-fired pizza made daily - try our cheese pizza,1;3
+     * 3,college-canteen-blog.com,Student reviews of canteen food and chai and Friday pizza,2;4
+     * 4,pizza-recipes-home.com,Make pizza at home - pizza dough and pizza sauce,2;5
+     * 5,cheap-eats-pune.com,Good food under 100 rupees - misal and dosa and pizza slices,2
+     * 6,pizza-pizza-pizza.com,pizza pizza pizza pizza pizza pizza pizza pizza pizza pizza,1
+     */
+    const SITES = [
+      {
+        id: 1,
+        url: "pune-food-guide.com",
+        text: "Where to eat in Pune - vada pav and biryani and pizza",
+        links_to: [2],
+        characterName: "Foodie Uncle",
+        characterTag: "Vada Pav & Pizza Connoisseur",
+        badgeColor: "bg-orange-100 text-orange-800 border-orange-300",
+        ringColor: "#F97316"
+      },
+      {
+        id: 2,
+        url: "best-pizza-pune.com",
+        text: "Fresh wood-fired pizza made daily - try our cheese pizza",
+        links_to: [1, 3],
+        characterName: "Royal Chef Cat",
+        characterTag: "Mostly Linked! (4 Votes)",
+        badgeColor: "bg-yellow-100 text-yellow-900 border-yellow-400",
+        ringColor: "#EAB308"
+      },
+      {
+        id: 3,
+        url: "college-canteen-blog.com",
+        text: "Student reviews of canteen food and chai and Friday pizza",
+        links_to: [2, 4],
+        characterName: "Sleepy Student",
+        characterTag: "Chai & Friday Pizza Reviewer",
+        badgeColor: "bg-sky-100 text-sky-800 border-sky-300",
+        ringColor: "#0EA5E9"
+      },
+      {
+        id: 4,
+        url: "pizza-recipes-home.com",
+        text: "Make pizza at home - pizza dough and pizza sauce",
+        links_to: [2, 5],
+        characterName: "Grandma Dog",
+        characterTag: "Rolling Homemade Dough",
+        badgeColor: "bg-amber-100 text-amber-900 border-amber-300",
+        ringColor: "#D97706"
+      },
+      {
+        id: 5,
+        url: "cheap-eats-pune.com",
+        text: "Good food under 100 rupees - misal and dosa and pizza slices",
+        links_to: [2],
+        characterName: "Swag Pug",
+        characterTag: "₹99 Scooter Pizza Hunter",
+        badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
+        ringColor: "#10B981"
+      },
+      {
+        id: 6,
+        url: "pizza-pizza-pizza.com",
+        text: "pizza pizza pizza pizza pizza pizza pizza pizza pizza pizza",
+        links_to: [1],
+        characterName: "Sneaky Raccoon",
+        characterTag: "1996 Keyword Spam-Bot",
+        badgeColor: "bg-rose-100 text-rose-800 border-rose-300",
+        ringColor: "#F43F5E"
+      }
+    ];
+
+    // Application Reactive State
+    const state = {
+      query: "pizza",
+      damping: 0.85,
+      iterations: 25, // 25 = fully converged
+      selectedNodeId: 2,
+      scores: {}
+    };
+
+    /**
+     * 2. CUSTOM EXPRESSIVE SVG AVATARS FOR ALL 6 CHARACTERS
+     */
+    function getCharacterAvatarSVG(id, showWinnerCrown = false) {
+      const crownOverlay = showWinnerCrown
+        ? `<g transform="translate(30, 1)">
+             <path d="M4 16 L8 5 L16 12 L24 4 L32 12 L40 5 L44 16 Z" fill="#FACC15" stroke="#B45309" stroke-width="2" stroke-linejoin="round"/>
+             <circle cx="24" cy="4" r="2.2" fill="#EF4444"/>
+           </g>`
+        : "";
+
+      switch (id) {
+        case 1: // Foodie Uncle with Vada Pav & Pizza
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="46" fill="#FFEDD5" stroke="#FDBA74" stroke-width="3"/>
+              <!-- Uncle Head & Balding Hair Tufts -->
+              <circle cx="50" cy="48" r="22" fill="#FDBA74" stroke="#9A3412" stroke-width="2"/>
+              <path d="M26 42 Q24 32 32 34 M74 42 Q76 32 68 34" stroke="#374151" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <!-- Glasses -->
+              <circle cx="42" cy="45" r="6" fill="#FFFFFF" stroke="#1F2937" stroke-width="2"/>
+              <circle cx="58" cy="45" r="6" fill="#FFFFFF" stroke="#1F2937" stroke-width="2"/>
+              <line x1="48" y1="45" x2="52" y2="45" stroke="#1F2937" stroke-width="2"/>
+              <circle cx="42" cy="45" r="2" fill="#1F2937"/>
+              <circle cx="58" cy="45" r="2" fill="#1F2937"/>
+              <!-- Happy Mustache & Smile -->
+              <path d="M41 56 Q50 52 59 56" stroke="#374151" stroke-width="3" stroke-linecap="round" fill="none"/>
+              <path d="M44 60 Q50 66 56 60" stroke="#9A3412" stroke-width="2" fill="none"/>
+              <!-- Vada Pav on Left -->
+              <rect x="14" y="64" width="22" height="15" rx="7" fill="#F59E0B" stroke="#92400E" stroke-width="1.8"/>
+              <circle cx="25" cy="71" r="5" fill="#CA8A04"/>
+              <!-- Pizza Slice on Right -->
+              <path d="M66 64 L88 68 L74 85 Z" fill="#FDE047" stroke="#B45309" stroke-width="1.8"/>
+              <circle cx="75" cy="72" r="2.2" fill="#DC2626"/>
+              ${crownOverlay}
+            </svg>`;
+
+        case 2: // Royal Chef Cat wearing Chef Hat & Golden Pizza Crown
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="52" r="45" fill="#FEF9C3" stroke="#FACC15" stroke-width="3"/>
+              <!-- Cat Ears -->
+              <polygon points="27,42 32,20 46,35" fill="#FB923C" stroke="#9A3412" stroke-width="2"/>
+              <polygon points="73,42 68,20 54,35" fill="#FB923C" stroke="#9A3412" stroke-width="2"/>
+              <!-- Cat Face -->
+              <circle cx="50" cy="54" r="23" fill="#FDBA74" stroke="#9A3412" stroke-width="2"/>
+              <!-- Golden Pizza Crown -->
+              <path d="M35 28 L39 14 L50 23 L61 14 L65 28 Z" fill="#FACC15" stroke="#B45309" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="50" cy="19" r="2.5" fill="#DC2626"/>
+              <!-- Royal Cat Eyes & Whiskers -->
+              <ellipse cx="42" cy="50" rx="3" ry="4" fill="#1F2937"/>
+              <ellipse cx="58" cy="50" rx="3" ry="4" fill="#1F2937"/>
+              <polygon points="47,57 53,57 50,61" fill="#F43F5E"/>
+              <line x1="22" y1="54" x2="34" y2="56" stroke="#78350F" stroke-width="1.5"/>
+              <line x1="22" y1="60" x2="34" y2="60" stroke="#78350F" stroke-width="1.5"/>
+              <line x1="66" y1="56" x2="78" y2="54" stroke="#78350F" stroke-width="1.5"/>
+              <line x1="66" y1="60" x2="78" y2="60" stroke="#78350F" stroke-width="1.5"/>
+              <!-- Royal Pizza Slice -->
+              <path d="M37 74 L63 74 L50 92 Z" fill="#FDE047" stroke="#B45309" stroke-width="2"/>
+              <circle cx="50" cy="80" r="2.6" fill="#DC2626"/>
+            </svg>`;
+
+        case 3: // Sleepy College Student holding Chai & Pizza slice
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="46" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="3"/>
+              <!-- Messy Student Hair -->
+              <path d="M28 45 C26 24 74 24 72 45 C66 34 34 34 28 45 Z" fill="#1E293B"/>
+              <!-- Student Face -->
+              <circle cx="50" cy="50" r="20" fill="#FED7AA" stroke="#9A3412" stroke-width="2"/>
+              <!-- Sleepy Half-Closed Eyes & Dark Circles -->
+              <path d="M38 47 L46 47" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M54 47 L62 47" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M39 51 Q42 53 45 51" stroke="#64748B" stroke-width="1.2" fill="none"/>
+              <path d="M55 51 Q58 53 61 51" stroke="#64748B" stroke-width="1.2" fill="none"/>
+              <!-- Yawn / Sip Smile -->
+              <ellipse cx="50" cy="59" rx="4" ry="3" fill="#9A3412"/>
+              <!-- Cutting Chai Glass on Left -->
+              <polygon points="18,65 32,65 30,85 20,85" fill="#D97706" stroke="#78350F" stroke-width="1.8"/>
+              <path d="M22 61 Q20 56 23 53 M28 61 Q26 56 29 53" stroke="#94A3B8" stroke-width="1.5" fill="none"/>
+              <!-- Friday Pizza Slice on Right -->
+              <path d="M66 65 L86 70 L72 86 Z" fill="#FDE047" stroke="#B45309" stroke-width="1.8"/>
+              <circle cx="74" cy="73" r="2.2" fill="#DC2626"/>
+              ${crownOverlay}
+            </svg>`;
+
+        case 4: // Grandma Dog rolling pizza dough
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="46" fill="#FEF3C7" stroke="#FCD34D" stroke-width="3"/>
+              <!-- Grandma Hair Bun -->
+              <circle cx="50" cy="22" r="9" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
+              <!-- Floppy Grey-Gold Ears -->
+              <ellipse cx="28" cy="52" rx="7" ry="15" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.8"/>
+              <ellipse cx="72" cy="52" rx="7" ry="15" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.8"/>
+              <!-- Dog Face -->
+              <circle cx="50" cy="48" r="21" fill="#FDE68A" stroke="#B45309" stroke-width="2"/>
+              <!-- Reading Glasses -->
+              <circle cx="43" cy="45" r="5" fill="#FFFFFF" stroke="#4B5563" stroke-width="1.8"/>
+              <circle cx="57" cy="45" r="5" fill="#FFFFFF" stroke="#4B5563" stroke-width="1.8"/>
+              <circle cx="43" cy="45" r="1.8" fill="#1F2937"/>
+              <circle cx="57" cy="45" r="1.8" fill="#1F2937"/>
+              <!-- Dog Nose -->
+              <ellipse cx="50" cy="54" rx="4.5" ry="3.2" fill="#1F2937"/>
+              <!-- Wooden Rolling Pin & Pizza Dough -->
+              <ellipse cx="50" cy="79" rx="24" ry="7" fill="#FFFBEB" stroke="#D97706" stroke-width="1.8"/>
+              <rect x="24" y="72" width="52" height="6" rx="3" fill="#B45309"/>
+              <rect x="17" y="73.5" width="7" height="3" rx="1.5" fill="#78350F"/>
+              <rect x="76" y="73.5" width="7" height="3" rx="1.5" fill="#78350F"/>
+              ${crownOverlay}
+            </svg>`;
+
+        case 5: // Sunglasses Pug on a budget scooter with pizza slice
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="46" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="3"/>
+              <!-- Pug Ears -->
+              <polygon points="28,36 36,26 42,38" fill="#374151"/>
+              <polygon points="72,36 64,26 58,38" fill="#374151"/>
+              <!-- Pug Face -->
+              <circle cx="50" cy="47" r="21" fill="#E7C697" stroke="#92400E" stroke-width="2"/>
+              <!-- Dark Pug Muzzle -->
+              <ellipse cx="50" cy="55" rx="11" ry="8" fill="#374151"/>
+              <ellipse cx="50" cy="52" rx="4" ry="2.8" fill="#111827"/>
+              <!-- Cool Deal-With-It Sunglasses -->
+              <rect x="33" y="40" width="15" height="9" rx="2" fill="#111827"/>
+              <rect x="52" y="40" width="15" height="9" rx="2" fill="#111827"/>
+              <line x1="48" y1="43" x2="52" y2="43" stroke="#111827" stroke-width="2.5"/>
+              <!-- ₹99 Tag + Pizza Slice -->
+              <rect x="20" y="69" width="28" height="14" rx="4" fill="#10B981" stroke="#065F46" stroke-width="1.5"/>
+              <text x="34" y="79" text-anchor="middle" fill="#FFFFFF" font-size="9" font-weight="bold">₹99</text>
+              <path d="M56 68 L80 71 L66 86 Z" fill="#FDE047" stroke="#B45309" stroke-width="1.8"/>
+              ${crownOverlay}
+            </svg>`;
+
+        case 6: // Sneaky Raccoon Spam-Bot wearing fake mustache chanting "pizza pizza pizza"
+        default:
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="46" fill="#FFE4E6" stroke="#FDA4AF" stroke-width="3"/>
+              <!-- Raccoon Ears -->
+              <polygon points="28,38 32,22 44,34" fill="#64748B" stroke="#334155" stroke-width="2"/>
+              <polygon points="72,38 68,22 56,34" fill="#64748B" stroke="#334155" stroke-width="2"/>
+              <!-- Raccoon Head -->
+              <circle cx="50" cy="50" r="22" fill="#94A3B8" stroke="#334155" stroke-width="2"/>
+              <!-- Bandit Eye Mask -->
+              <rect x="31" y="41" width="38" height="12" rx="6" fill="#1E293B"/>
+              <circle cx="41" cy="47" r="3" fill="#FACC15"/>
+              <circle cx="59" cy="47" r="3" fill="#FACC15"/>
+              <!-- Fake Disguise Mustache -->
+              <path d="M36 60 Q43 55 50 60 Q57 55 64 60 Q59 65 50 62 Q41 65 36 60 Z" fill="#0F172A"/>
+              <!-- Megaphone / Spam Banner -->
+              <rect x="22" y="70" width="56" height="14" rx="4" fill="#E11D48"/>
+              <text x="50" y="80" text-anchor="middle" fill="#FFFFFF" font-size="8" font-weight="bold">PIZZA x10!</text>
+              ${crownOverlay}
+            </svg>`;
+      }
+    }
+
+    /**
+     * 3. REAL PAGERANK POWER ITERATION ENGINE
+     * Computes PR(A) = (1 - d)/N + d * sum(PR(Ti) / L(Ti))
+     */
+    function computePageRank(damping = 0.85, maxIter = 25) {
+      const N = SITES.length;
+      let ranks = {};
+      SITES.forEach(s => { ranks[s.id] = 1 / N; });
+
+      if (maxIter === 0) {
+        return ranks;
+      }
+
+      for (let iter = 0; iter < maxIter; iter++) {
+        const nextRanks = {};
+        const teleportBase = (1 - damping) / N;
+
+        SITES.forEach(s => {
+          nextRanks[s.id] = teleportBase;
+        });
+
+        SITES.forEach(source => {
+          const outDegree = source.links_to.length;
+          if (outDegree === 0) {
+            // Dangling node handling (distributes equally)
+            const share = (damping * ranks[source.id]) / N;
+            SITES.forEach(target => {
+              nextRanks[target.id] += share;
+            });
+          } else {
+            const share = (damping * ranks[source.id]) / outDegree;
+            source.links_to.forEach(targetId => {
+              nextRanks[targetId] += share;
+            });
+          }
+        });
+
+        ranks = nextRanks;
+      }
+
+      return ranks;
+    }
+
+    /**
+     * Helper: Find all pages linking INTO a given siteId
+     */
+    function getIncomingLinks(siteId) {
+      return SITES.filter(s => s.links_to.includes(siteId)).map(s => s.id);
+    }
+
+    /**
+     * Helper: Count keyword occurrences in text (case-insensitive)
+     */
+    function countKeywordMatches(text, query) {
+      const q = query.trim().toLowerCase();
+      if (!q || q === "*" || q === "all") return 1;
+
+      // Support multi-word phrases (like "vada pav") or individual tokens
+      const tokens = q.split(/\s+/).filter(Boolean);
+      const lowerText = text.toLowerCase();
+
+      // Check full phrase first if multi-word
+      if (tokens.length > 1 && lowerText.includes(q)) {
+        const escapedPhrase = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const matches = lowerText.match(new RegExp(escapedPhrase, 'g'));
+        return matches ? matches.length : 0;
+      }
+
+      let totalCount = 0;
+      tokens.forEach(token => {
+        const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escaped}\\b|${escaped}`, 'gi');
+        const matches = text.match(regex);
+        if (matches) totalCount += matches.length;
+      });
+      return totalCount;
+    }
+
+    /**
+     * Helper: Highlight matched query keywords in snippet
+     */
+    function highlightSnippet(text, query) {
+      const q = query.trim();
+      if (!q || q === "*" || q === "all") return escapeHTML(text);
+
+      const tokens = Array.from(new Set(q.toLowerCase().split(/\s+/).filter(Boolean)));
+      if (tokens.length === 0) return escapeHTML(text);
+
+      const escapedTokens = tokens
+        .sort((a, b) => b.length - a.length)
+        .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
+
+      return escapeHTML(text).replace(regex, '<mark class="cheese-mark">$1</mark>');
+    }
+
+    function escapeHTML(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /**
+     * 4. DYNAMIC MASCOT REACTIONS & INSIGHT BANNER
+     */
+    function updateMascotReactions(query, oldRanked, prRanked) {
+      const q = query.trim().toLowerCase();
+      const dogSpeech = document.getElementById("dog-speech");
+      const chefSpeech = document.getElementById("chef-speech");
+      const insightIcon = document.getElementById("insight-icon");
+      const insightTitle = document.getElementById("insight-title");
+      const insightDesc = document.getElementById("insight-desc");
+      const matchBadge = document.getElementById("match-count-badge");
+
+      matchBadge.textContent = `${oldRanked.length} of ${SITES.length} sites matched`;
+
+      if (oldRanked.length === 0) {
+        dogSpeech.innerHTML = `"Ruh-roh! Zero Pune food pages matched <b>${escapeHTML(query)}</b>. Try clicking <b>pizza</b>, <b>pune</b>, or <b>chai</b>!"`;
+        chefSpeech.innerHTML = `"Mama mia, our 6-site kitchen doesn't serve that yet! Try searching <b>vada pav</b> or <b>dough</b>!"`;
+        insightIcon.textContent = "🍽️";
+        insightTitle.textContent = `No matches found for "${query}"`;
+        insightDesc.textContent = "Click any suggestion pill above (like pizza, pune, food, vada pav, chai, or *) to see both search engines compare results!";
+        return;
+      }
+
+      const oldWinner = oldRanked[0];
+      const prWinner = prRanked[0];
+
+      if (q === "pizza") {
+        dogSpeech.innerHTML = `"Whoa! In 1996, <b>Sneaky Raccoon</b> stole #1 by yelling <i>pizza</i> 10 times! Thank goodness PageRank crowned <b>Royal Chef Cat</b>!"`;
+        chefSpeech.innerHTML = `"Mamma mia! <b>best-pizza-pune.com</b> gets 4 real link-votes from Pune foodies—while Raccoon has ZERO links!"`;
+        insightIcon.textContent = "🚨";
+        insightTitle.textContent = `Spam Exposed! Old Way crowns #6 Raccoon (10x keyword) vs. PageRank crowns #2 Chef Cat (${(state.scores[2] * 100).toFixed(1)}% rank)`;
+        insightDesc.innerHTML = `Notice also how <b>Site #1</b> and <b>Site #3</b> beat <b>Site #4</b> in PageRank even though Site #4 mentions "pizza" 3 times—because getting a link from Hub #2 carries huge authority!`;
+      } else if (oldWinner.site.id !== prWinner.site.id) {
+        dogSpeech.innerHTML = `"Aha! For <b>${escapeHTML(query)}</b>, Old Way picked <b>${oldWinner.site.characterName}</b> (${oldWinner.keywordCount}x match), but PageRank trusts <b>${prWinner.site.characterName}</b>!"`;
+        chefSpeech.innerHTML = `"Link authority wins again! <b>${prWinner.site.url}</b> has a ${(state.scores[prWinner.site.id] * 100).toFixed(1)}% PageRank score!"`;
+        insightIcon.textContent = "⚖️";
+        insightTitle.textContent = `Different Winners for "${query}"!`;
+        insightDesc.innerHTML = `<b>Old Way #1:</b> <code>${oldWinner.site.url}</code> (${oldWinner.keywordCount} keyword matches) vs. <b>PageRank #1:</b> <code>${prWinner.site.url}</code> (${(state.scores[prWinner.site.id] * 100).toFixed(1)}% PageRank authority).`;
+      } else {
+        dogSpeech.innerHTML = `"Nice! For <b>${escapeHTML(query)}</b>, both algorithms agree that <b>${prWinner.site.characterName}</b> (<code>${prWinner.site.url}</code>) is #1!"`;
+        chefSpeech.innerHTML = `"Bellissimo! Even when both agree on #1, check how PageRank orders the rest using link votes!"`;
+        insightIcon.textContent = "🤝";
+        insightTitle.textContent = `Both Engines Agree on #1 for "${query}"!`;
+        insightDesc.innerHTML = `<code>${prWinner.site.url}</code> takes #1 in both views, while PageRank still gives a higher authority score (${(state.scores[prWinner.site.id] * 100).toFixed(1)}%) based on incoming links.`;
+      }
+    }
+
+    /**
+     * 5. RENDER SIDE-BY-SIDE SEARCH RESULT CARDS
+     */
+    function renderSearchResults() {
+      const q = state.query.trim();
+      const isWildcard = (q === "" || q === "*" || q.toLowerCase() === "all");
+
+      // Filter matching sites
+      const matched = SITES.map(site => {
+        const keywordCount = countKeywordMatches(site.text, q);
+        const prScore = state.scores[site.id] || 0;
+        const inLinks = getIncomingLinks(site.id);
+        return { site, keywordCount, prScore, inLinks };
+      }).filter(item => isWildcard || item.keywordCount > 0);
+
+      // Sort 1: OLD WAY (Keyword count descending, tie-break by id ascending)
+      const oldRanked = [...matched].sort((a, b) => {
+        if (b.keywordCount !== a.keywordCount) return b.keywordCount - a.keywordCount;
+        return a.site.id - b.site.id;
+      });
+
+      // Sort 2: PAGERANK WAY (PageRank score descending)
+      const prRanked = [...matched].sort((a, b) => b.prScore - a.prScore);
+
+      updateMascotReactions(q, oldRanked, prRanked);
+
+      const oldContainer = document.getElementById("old-way-results");
+      const prContainer = document.getElementById("pagerank-way-results");
+
+      if (matched.length === 0) {
+        const emptyHTML = `
+          <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+            <div class="text-4xl mb-2">🍕❓</div>
+            <p class="font-bold text-gray-800">No Pune pages matched "${escapeHTML(q)}"</p>
+            <p class="text-xs text-gray-500 mt-1">Try searching <b>pizza</b>, <b>pune</b>, <b>food</b>, <b>vada pav</b>, <b>chai</b>, or <b>*</b></p>
+          </div>`;
+        oldContainer.innerHTML = emptyHTML;
+        prContainer.innerHTML = emptyHTML;
+        return;
+      }
+
+      // Render Old Way Cards
+      oldContainer.innerHTML = oldRanked.map((item, idx) => {
+        const rank = idx + 1;
+        const isSpamWinner = (rank === 1 && item.site.id === 6);
+        const rankBadgeClass = rank === 1
+          ? (isSpamWinner ? "bg-rose-600 text-white" : "bg-amber-500 text-white")
+          : "bg-gray-200 text-gray-700";
+
+        return `
+          <article
+            onclick="selectNetworkNode(${item.site.id})"
+            class="result-card cursor-pointer bg-white rounded-2xl border ${isSpamWinner ? 'border-rose-300 ring-2 ring-rose-100' : 'border-amber-200/80'} p-4 shadow-2xs"
+          >
+            <div class="flex items-start gap-3.5">
+              <!-- Character Avatar -->
+              <div class="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
+                ${getCharacterAvatarSVG(item.site.id, false)}
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <!-- Top Meta Row -->
+                <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-extrabold ${rankBadgeClass}">
+                      #${rank}
+                    </span>
+                    <span class="text-xs font-semibold text-green-700 truncate">
+                      https://${item.site.url}
+                    </span>
+                  </div>
+                  <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border ${item.site.badgeColor}">
+                    Site #${item.site.id} • ${item.site.characterName}
+                  </span>
+                </div>
+
+                <!-- Snippet -->
+                <p class="text-sm sm:text-base text-gray-800 leading-snug my-1.5">
+                  "${highlightSnippet(item.site.text, q)}"
+                </p>
+
+                <!-- Bottom Metrics Row -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 mt-2 border-t border-gray-100 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900">
+                      🔤 Keyword Count: ${isWildcard ? 'All' : item.keywordCount + 'x'}
+                    </span>
+                    ${isSpamWinner ? '<span class="font-bold text-rose-600 animate-pulse">🚨 Spam Trick Worked!</span>' : ''}
+                  </div>
+                  <span class="text-gray-500">
+                    Incoming Links: <b>${item.inLinks.length}</b>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>`;
+      }).join("");
+
+      // Render PageRank Way Cards
+      prContainer.innerHTML = prRanked.map((item, idx) => {
+        const rank = idx + 1;
+        const isTopWinner = (rank === 1);
+        const isRaccoonLast = (item.site.id === 6 && rank === prRanked.length && prRanked.length > 1);
+        const pct = (item.prScore * 100).toFixed(1);
+
+        const rankBadgeClass = isTopWinner
+          ? "bg-blue-600 text-white shadow-xs"
+          : (isRaccoonLast ? "bg-rose-100 text-rose-700" : "bg-blue-100 text-blue-800");
+
+        const inLinksText = item.inLinks.length > 0
+          ? item.inLinks.map(id => `#${id}`).join(", ")
+          : "None (0 votes)";
+
+        return `
+          <article
+            onclick="selectNetworkNode(${item.site.id})"
+            class="result-card cursor-pointer bg-white rounded-2xl border ${isTopWinner ? 'border-blue-400 ring-2 ring-blue-100' : 'border-blue-200/70'} p-4 shadow-2xs"
+          >
+            <div class="flex items-start gap-3.5">
+              <!-- Character Avatar (with Golden Crown on #1 PageRank Winner!) -->
+              <div class="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
+                ${getCharacterAvatarSVG(item.site.id, isTopWinner)}
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <!-- Top Meta Row -->
+                <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-extrabold ${rankBadgeClass}">
+                      ${isTopWinner ? '👑 #1' : '#' + rank}
+                    </span>
+                    <span class="text-xs font-semibold text-blue-700 truncate">
+                      https://${item.site.url}
+                    </span>
+                  </div>
+                  <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border ${item.site.badgeColor}">
+                    Site #${item.site.id} • ${item.site.characterName}
+                  </span>
+                </div>
+
+                <!-- Snippet -->
+                <p class="text-sm sm:text-base text-gray-800 leading-snug my-1.5">
+                  "${highlightSnippet(item.site.text, q)}"
+                </p>
+
+                <!-- Bottom Metrics Row -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 mt-2 border-t border-gray-100 text-xs">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900">
+                      📊 PageRank: ${pct}% (${item.prScore.toFixed(3)})
+                    </span>
+                    ${isRaccoonLast ? '<span class="font-bold text-rose-600">🎺 Demoted (0 Votes!)</span>' : ''}
+                  </div>
+                  <span class="text-emerald-700 font-medium">
+                    Votes from: <b>${inLinksText}</b>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    /**
+     * 6. INTERACTIVE SVG DIRECTED GRAPH VISUALIZER
+     * Places Site #2 (Chef Cat) as the central hub surrounded by 1, 3, 4, 5, and Site #6 on the side.
+     */
+    const NODE_COORDS = {
+      2: { x: 310, y: 210 }, // Center Hub: Royal Chef Cat
+      1: { x: 165, y: 95  }, // Top Left: Foodie Uncle
+      3: { x: 465, y: 95  }, // Top Right: Sleepy Student
+      4: { x: 465, y: 325 }, // Bottom Right: Grandma Dog
+      5: { x: 165, y: 325 }, // Bottom Left: Swag Pug
+      6: { x: 55,  y: 210 }  // Far Left Isolated Spammer: Sneaky Raccoon
+    };
+
+    function renderNetworkGraph() {
+      const edgesGroup = document.getElementById("graph-edges");
+      const nodesGroup = document.getElementById("graph-nodes");
+      const selectedId = state.selectedNodeId;
+
+      // Compute dynamic radius for each node based on PageRank score
+      const getRadius = (id) => {
+        const pr = state.scores[id] || (1 / 6);
+        return Math.max(24, Math.min(54, 20 + pr * 78));
+      };
+
+      // Build all directed edges
+      let edgesHTML = "";
+      SITES.forEach(source => {
+        source.links_to.forEach(targetId => {
+          const p1 = NODE_COORDS[source.id];
+          const p2 = NODE_COORDS[targetId];
+          const r1 = getRadius(source.id);
+          const r2 = getRadius(targetId);
+
+          // Check if reciprocal link exists (e.g. 1 <-> 2, 2 <-> 3) to curve slightly
+          const targetSite = SITES.find(s => s.id === targetId);
+          const isBidirectional = targetSite && targetSite.links_to.includes(source.id);
+
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const ux = dx / dist;
+          const uy = dy / dist;
+
+          // Perpendicular offset for curved bidirectional paths
+          const perpX = -uy * (isBidirectional ? 18 : 0);
+          const perpY = ux * (isBidirectional ? 18 : 0);
+
+          const startX = p1.x + ux * (r1 + 4) + perpX * 0.4;
+          const startY = p1.y + uy * (r1 + 4) + perpY * 0.4;
+          const endX = p2.x - ux * (r2 + 7) + perpX * 0.4;
+          const endY = p2.y - uy * (r2 + 7) + perpY * 0.4;
+
+          const midX = (startX + endX) / 2 + perpX;
+          const midY = (startY + endY) / 2 + perpY;
+
+          // Highlight incoming/outgoing edges for selected node
+          let strokeColor = "#CBD5E1";
+          let strokeWidth = "2.2";
+          let marker = "url(#arrow-default)";
+          let opacity = "0.85";
+
+          if (targetId === selectedId) {
+            strokeColor = "#10B981"; // Emerald green for incoming vote
+            strokeWidth = "3.6";
+            marker = "url(#arrow-in)";
+            opacity = "1";
+          } else if (source.id === selectedId) {
+            strokeColor = "#F59E0B"; // Amber for outgoing vote
+            strokeWidth = "3.2";
+            marker = "url(#arrow-out)";
+            opacity = "1";
+          }
+
+          edgesHTML += `
+            <path
+              d="M ${startX.toFixed(1)} ${startY.toFixed(1)} Q ${midX.toFixed(1)} ${midY.toFixed(1)} ${endX.toFixed(1)} ${endY.toFixed(1)}"
+              fill="none"
+              stroke="${strokeColor}"
+              stroke-width="${strokeWidth}"
+              stroke-opacity="${opacity}"
+              marker-end="${marker}"
+            />`;
+        });
+      });
+      edgesGroup.innerHTML = edgesHTML;
+
+      // Build all 6 interactive nodes
+      let nodesHTML = "";
+      SITES.forEach(site => {
+        const pos = NODE_COORDS[site.id];
+        const r = getRadius(site.id);
+        const prPct = ((state.scores[site.id] || 0) * 100).toFixed(1);
+        const isSelected = (site.id === selectedId);
+
+        nodesHTML += `
+          <g
+            onclick="selectNetworkNode(${site.id})"
+            class="cursor-pointer transition-transform"
+            transform="translate(${pos.x}, ${pos.y})"
+          >
+            ${isSelected ? `<circle r="${r + 7}" fill="none" stroke="#2563EB" stroke-width="3" stroke-dasharray="5 3" />` : ''}
+            <circle
+              r="${r}"
+              fill="#FFFFFF"
+              stroke="${site.ringColor}"
+              stroke-width="${isSelected ? 4.5 : 3}"
+            />
+            <!-- Site ID & Character Label -->
+            <text y="-4" text-anchor="middle" font-size="12" font-weight="800" fill="#1F2937">
+              #${site.id}
+            </text>
+            <text y="11" text-anchor="middle" font-size="11" font-weight="700" fill="#2563EB">
+              ${prPct}%
+            </text>
+            <!-- Label Pill Below Node -->
+            <g transform="translate(0, ${r + 16})">
+              <rect x="-54" y="-10" width="108" height="18" rx="9" fill="${isSelected ? '#1E3A8A' : '#FFFFFF'}" stroke="#E5E7EB" stroke-width="1"/>
+              <text y="3" text-anchor="middle" font-size="10" font-weight="700" fill="${isSelected ? '#FFFFFF' : '#374151'}">
+                ${site.characterName}
+              </text>
+            </g>
+          </g>`;
+      });
+      nodesGroup.innerHTML = nodesHTML;
+
+      renderNodeInspector();
+    }
+
+    /**
+     * 7. SELECTED NODE MATH INSPECTOR CARD
+     */
+    function renderNodeInspector() {
+      const site = SITES.find(s => s.id === state.selectedNodeId) || SITES[1];
+      const inLinks = getIncomingLinks(site.id);
+      const pr = state.scores[site.id] || 0;
+      const d = state.damping;
+      const N = SITES.length;
+      const teleport = ((1 - d) / N).toFixed(4);
+
+      const incomingTerms = inLinks.length > 0
+        ? inLinks.map(srcId => {
+            const srcSite = SITES.find(s => s.id === srcId);
+            const srcPR = (state.scores[srcId] || 0).toFixed(3);
+            const outL = srcSite.links_to.length;
+            return `<span class="inline-block bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-mono text-[11px]">#${srcId} (${srcPR}/${outL})</span>`;
+          }).join(" + ")
+        : `<span class="text-rose-600 font-semibold text-xs">0 incoming links! Only gets random teleport (${teleport}).</span>`;
+
+      document.getElementById("node-inspector").innerHTML = `
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-12 h-12 shrink-0">${getCharacterAvatarSVG(site.id, site.id === 2)}</div>
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-amber-800">Selected Node #${site.id}</div>
+            <h3 class="font-fun font-bold text-base sm:text-lg text-gray-900 leading-tight">
+              ${site.characterName} (<span class="text-blue-700">${(pr * 100).toFixed(1)}%</span>)
+            </h3>
+            <div class="text-xs text-gray-600">${site.url}</div>
+          </div>
+        </div>
+        <div class="text-xs text-gray-700 space-y-1.5 pt-2 border-t border-amber-200/80">
+          <div>
+            <span class="font-semibold text-emerald-800">Incoming Votes (${inLinks.length}):</span>
+            <div class="mt-1 flex flex-wrap gap-1">${incomingTerms}</div>
+          </div>
+          <div>
+            <span class="font-semibold text-amber-900">Shares Vote To (${site.links_to.length} outbound):</span>
+            <span>${site.links_to.map(id => `Site #${id}`).join(", ")}</span>
+          </div>
+        </div>`;
+    }
+
+    /**
+     * 8. RENDER DATASET TABLE
+     */
+    function renderDatasetTable() {
+      const tbody = document.getElementById("dataset-tbody");
+      tbody.innerHTML = SITES.map(site => {
+        const inLinks = getIncomingLinks(site.id);
+        const prPct = ((state.scores[site.id] || 0) * 100).toFixed(1);
+        const isHub = site.id === 2;
+        const isSpam = site.id === 6;
+
+        return `
+          <tr onclick="selectNetworkNode(${site.id})" class="cursor-pointer hover:bg-amber-50/60 transition ${isHub ? 'bg-yellow-50/40' : ''}">
+            <td class="py-2.5 px-3 sm:px-4 font-bold text-gray-900">#${site.id}</td>
+            <td class="py-2.5 px-3 sm:px-4">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 shrink-0">${getCharacterAvatarSVG(site.id, isHub)}</div>
+                <span class="font-semibold text-gray-800 whitespace-nowrap">${site.characterName}</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-3 sm:px-4 font-mono text-xs text-blue-700 whitespace-nowrap">${site.url}</td>
+            <td class="py-2.5 px-3 sm:px-4 text-gray-700 max-w-xs">${escapeHTML(site.text)}</td>
+            <td class="py-2.5 px-3 sm:px-4 font-mono text-xs font-semibold text-amber-800">${site.links_to.join(";")}</td>
+            <td class="py-2.5 px-3 sm:px-4 text-xs">
+              ${inLinks.length > 0
+                ? `<span class="font-semibold text-emerald-700">${inLinks.map(id => '#' + id).join(', ')} (${inLinks.length})</span>`
+                : `<span class="font-semibold text-rose-600">None (0)</span>`}
+            </td>
+            <td class="py-2.5 px-3 sm:px-4 text-right font-mono font-bold ${isHub ? 'text-blue-700' : (isSpam ? 'text-rose-600' : 'text-gray-800')}">
+              ${prPct}%
+            </td>
+          </tr>`;
+      }).join("");
+    }
+
+    /**
+     * 9. RECOMPUTE & REFRESH ALL UI VIEWS
+     */
+    function refreshApp() {
+      state.scores = computePageRank(state.damping, state.iterations);
+      document.getElementById("damping-value").textContent = state.damping.toFixed(2);
+      document.getElementById("iter-badge").textContent =
+        state.iterations === 0
+          ? "Iter 0 (Equal 16.7%)"
+          : state.iterations >= 25
+            ? "Converged (Iter 25)"
+            : `Iteration ${state.iterations}`;
+
+      renderSearchResults();
+      renderNetworkGraph();
+      renderDatasetTable();
+    }
+
+    // Global click handler for selecting a node in cards/graph/table
+    window.selectNetworkNode = function (id) {
+      state.selectedNodeId = id;
+      renderNetworkGraph();
+    };
+
+    /**
+     * 10. EVENT LISTENERS & INITIALIZATION
+     */
+    window.addEventListener("DOMContentLoaded", () => {
+      const searchForm = document.getElementById("search-form");
+      const searchInput = document.getElementById("search-input");
+      const clearBtn = document.getElementById("clear-btn");
+      const dampingSlider = document.getElementById("damping-slider");
+
+      // Search form submit
+      searchForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        state.query = searchInput.value;
+        renderSearchResults();
+      });
+
+      // Live search input typing
+      searchInput.addEventListener("input", () => {
+        state.query = searchInput.value;
+        renderSearchResults();
+      });
+
+      // Clear search button -> shows all sites (*)
+      clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        state.query = "*";
+        searchInput.focus();
+        renderSearchResults();
+      });
+
+      // Quick suggestion query chips
+      document.querySelectorAll(".query-chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const q = btn.getAttribute("data-query");
+          searchInput.value = q;
+          state.query = q;
+          renderSearchResults();
+        });
+      });
+
+      // Damping factor slider
+      dampingSlider.addEventListener("input", (e) => {
+        state.damping = parseFloat(e.target.value);
+        refreshApp();
+      });
+
+      // Iteration stepper buttons
+      document.getElementById("iter-reset-btn").addEventListener("click", () => {
+        state.iterations = 0;
+        refreshApp();
+      });
+
+      document.getElementById("iter-step-btn").addEventListener("click", () => {
+        state.iterations = Math.min(25, state.iterations + 1);
+        refreshApp();
+      });
+
+      document.getElementById("iter-converge-btn").addEventListener("click", () => {
+        state.iterations = 25;
+        refreshApp();
+      });
+
+      // Initial render with "pizza" search active
+      refreshApp();
+    });
+  </script>
+</body>
+</html>
